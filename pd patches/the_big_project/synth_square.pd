@@ -1,0 +1,30 @@
+#N canvas 665 853 428 304 12;
+#X obj 108 186 metro 100;
+#N canvas 0 0 450 300 (subpatch) 0;
+#X array square_array 100 float 3 black black;
+#A 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 -1 -1 -1 -1 -1 -1 -1
+-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;
+#X coords 0 1 100 -1 200 140 1;
+#X restore 190 16 graph;
+#X obj 109 153 loadbang;
+#X obj 66 86 phasor~;
+#X obj 16 123 expr~ $v1 > 0.5;
+#X obj 93 11 inlet;
+#X msg 12 49 440;
+#X obj 12 11 loadbang;
+#X obj 108 231 tabwrite~ square_array;
+#X obj 15 229 outlet~;
+#X obj 16 192 -~ 1;
+#X obj 16 159 *~ 2;
+#X connect 0 0 8 0;
+#X connect 2 0 0 0;
+#X connect 3 0 4 0;
+#X connect 4 0 11 0;
+#X connect 5 0 3 0;
+#X connect 6 0 3 0;
+#X connect 7 0 6 0;
+#X connect 10 0 9 0;
+#X connect 10 0 8 0;
+#X connect 11 0 10 0;

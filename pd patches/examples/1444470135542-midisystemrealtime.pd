@@ -1,0 +1,63 @@
+#N canvas 618 152 318 110 10;
+#X obj 3 5 cnv 15 310 100 empty empty Midi.System.Realtime 3 6 0 11
+-16662 -262144 0;
+#X obj 281 59 cnv 7 30 10 empty empty empty 20 12 0 14 -258113 -66577
+0;
+#N canvas 325 48 450 300 clockout 0;
+#X obj 308 140 midiout;
+#X msg 163 123 252;
+#X msg 64 123 250;
+#X msg 13 123 248;
+#X obj 13 102 metro 20.8333;
+#X obj 372 40 expr (60000/$f1/24), f 7;
+#X obj 13 67 tgl 15 0 empty empty Clock -7 -5 0 10 -203904 -1 -262144
+0 1;
+#X msg 114 123 251;
+#X obj 114 67 bng 15 250 50 0 empty empty Continue -17 -7 0 10 -203904
+-4034 -262144;
+#X obj 163 67 bng 15 250 50 0 empty empty Stop -5 -7 0 10 -203904 -258113
+-262144;
+#X obj 64 67 bng 15 250 50 0 empty empty Start -7 -7 0 10 -203904 -4034
+-262144;
+#X obj 309 50 select;
+#X obj 237 67 tgl 15 0 empty empty Start(X)/Stop+Clock -44 -7 0 10
+-228992 -1 -262144 0 1;
+#X msg 307 82 set 0, f 3;
+#X msg 338 82 set 1, f 3;
+#X obj 106 26 nbx 5 14 1 1000 0 0 empty empty BPM 0 -8 0 10 -203904
+-1 -262144 1 256;
+#X msg 237 180 color 13 0 0;
+#X obj 13 144 select;
+#X msg 237 160 color 8 22 0;
+#X text 28 222 by NoDSP;
+#X text 28 208 Midi System Realtime;
+#X text 28 235 v0.1;
+#X connect 1 0 0 0;
+#X connect 2 0 0 0;
+#X connect 3 0 0 0;
+#X connect 4 0 3 0;
+#X connect 5 0 4 1;
+#X connect 6 0 4 0;
+#X connect 6 0 17 0;
+#X connect 7 0 0 0;
+#X connect 8 0 7 0;
+#X connect 8 0 14 0;
+#X connect 9 0 1 0;
+#X connect 9 0 13 0;
+#X connect 10 0 2 0;
+#X connect 10 0 14 0;
+#X connect 11 0 9 0;
+#X connect 11 0 18 0;
+#X connect 11 1 10 0;
+#X connect 11 1 16 0;
+#X connect 12 0 11 0;
+#X connect 12 0 6 0;
+#X connect 13 0 12 0;
+#X connect 14 0 12 0;
+#X connect 15 0 5 0;
+#X connect 16 0 12 0;
+#X connect 17 0 18 0;
+#X connect 17 1 16 0;
+#X connect 18 0 12 0;
+#X coords 0 -1 1 1 310 100 2 0 0;
+#X restore 4 4 pd clockout;
