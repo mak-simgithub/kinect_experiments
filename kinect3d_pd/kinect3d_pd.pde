@@ -10,6 +10,9 @@ MidiBus myBus; // The MidiBus
 
 import http.requests.*;
 
+import processing.sound.*;
+AudioIn in;
+
 //kinect related vars
 float deg_kinect;
 boolean ir = true;
@@ -35,16 +38,17 @@ float[] pers_rand = new float[3];
 
 
 //MIDI changeable vars
-float shape_growing_speed = 1;
+float shape_growing_speed = 0.5;
 int shape_type = 1;
 float shape_size = 0;
 int movement_type = 1;
-float movement_speed = 0.5;
+float movement_speed = 0.2;
 float spread_points_x = 1;
 float spread_points_y = 1;
 int point_detail = 3;
 int point_type = 1;
-
+float angle_x = 3;
+float angle_y = 3;
 
 //world related vars
 float[] depthLookUp = new float[2048];
@@ -56,6 +60,9 @@ boolean filter_world = false;
 boolean remeasure_world = false;
 int filter_time = 3000;
 float filter_tight = 0.8;
+float cut_x = 0.1;
+float cut_y = 0.1;
+float cut_z = 0.1;
 
 
 //GUI related vars
@@ -65,6 +72,7 @@ boolean show_overlay = false;
 void settings() { 
   System.setProperty("jogl.disable.openglcore", "false");
   size(1600, 900, P3D);
+  //fullScreen(P3D);
 }
 
 void setup() {
@@ -92,6 +100,11 @@ void setup() {
     
   world_points = get_world(kinect_skip_points);
   max_dims = measure_world(world_points);
+  
+  Sound.list();
+  
+  //in = new AudioIn(this, 0);
+  //in.start();
 
 }
 
@@ -117,7 +130,7 @@ void draw() {
     background(0,0,0);
     world_points = get_world(kinect_skip_points);
     
-    PVector[] world_points_filt = gate_world(world_points, max_dims, 0.2, 0, 0.5);
+    PVector[] world_points_filt = gate_world(world_points, max_dims, cut_x, cut_y, cut_z);
     
     draw_world(world_points_filt, (hue+180)%360,80,100,point_detail,point_type);
 
@@ -129,16 +142,16 @@ void draw() {
     
     set_light();
     
-    point_size = int(3+random(1)*7);
+    point_size = 3+random(1)*7;
     background(hue,80,70);
   
     world_points = get_world(kinect_skip_points);
     
-    PVector[] world_points_filt = gate_world(world_points, max_dims, 0.2, 0, 0.5);
+    PVector[] world_points_filt = gate_world(world_points, max_dims, cut_x, cut_y, cut_z);
     
     draw_world(world_points_filt, (hue+180)%360,80,100,point_detail,point_type);
 
-    draw_shape();
+    //draw_shape();
     
     move_camera();
     
@@ -149,8 +162,8 @@ void move_camera(){
   switch (movement_type) {
         //rotate from random angle in random direction around center
         case 1: { camera(((max_dist-min_dist)*pers_rand[0]+min_dist)*pers_rand[0]*2-1, //eyeX
-                        ((max_dist-min_dist)*pers_rand[0]+min_dist)*pers_rand[1]*2-1, //eyeY
-                        ((max_dist-min_dist)*pers_rand[0]+min_dist)*pers_rand[2]*2-1, //eyeZ
+                        ((max_dist-min_dist)*pers_rand[1]+min_dist)*pers_rand[1]*2-1, //eyeY
+                        ((max_dist-min_dist)*pers_rand[2]+min_dist)*pers_rand[2]*2-1, //eyeZ
                         (max_dims[0]+max_dims[1])/2, //centerX
                         (max_dims[2]+max_dims[3])/2, //centerY
                         -(max_dims[4]+max_dims[5])/2, //centerZ
@@ -160,9 +173,9 @@ void move_camera(){
                         
                   a -= 0.1f*(round(pers_rand[0])*2-1)*movement_speed;}
         break;
-        case 2: { camera(((max_dist-min_dist)*pers_rand[0]+min_dist)*pers_rand[0]*2-1,
-                        ((max_dist-min_dist)*pers_rand[0]+min_dist)*pers_rand[1]*2-1,
-                        ((max_dist-min_dist)*pers_rand[0]+min_dist)*(pers_rand[2]+a)*2-1,
+        case 2: { camera((max_dims[0]+max_dims[1])/2+pers_rand[2]*(max_dims[1]-max_dims[0])*angle_x-(max_dims[1]-max_dims[0])/2*angle_x,
+                        (max_dims[2]+max_dims[3])/2+pers_rand[2]*(max_dims[3]-max_dims[2])*angle_y-(max_dims[3]-max_dims[2])/2*angle_y,
+                        ((max_dist-min_dist)*pers_rand[2]+min_dist)*(pers_rand[2]+a)*2-1,
                         (max_dims[0]+max_dims[1])/2,
                         (max_dims[2]+max_dims[3])/2,
                         -(max_dims[4]+max_dims[5])/2,
@@ -247,16 +260,24 @@ void draw_world(PVector[] world, float hue, float sat, float lig, int detail, in
   for (int i = 0; i<world.length; i++) {
     if (world[i].x+world[i].y+world[i].z != 0){
       
-      sphereDetail(detail);
-      stroke(hue, lig, sat);
+      float this_point_size = point_size + random(1)*4 - 2;
+      
+      stroke(hue+this_point_size*10, lig, sat);
       
       pushMatrix();
       translate(world[i].x*spread_points_x, world[i].y*spread_points_y, -world[i].z);
       
       // Draw a shape
-      switch (shape) {
-        case 1: {sphere(point_size);}
+      switch (shape_type) {
+        case 1: {sphereDetail(3);
+        sphere(this_point_size);}
         break;
+        case 2: {sphereDetail(2);
+        sphere(this_point_size);}
+        break;
+        case 3: {box(this_point_size);}
+        break;
+        case 4: {tetrahedron(this_point_size);}
         }
         
       popMatrix();
@@ -282,10 +303,28 @@ PVector[] gate_world(PVector[] world, float[] max_dims, float cut_x, float cut_y
 
 void draw_shape(){
   pushMatrix();
-  translate(-1000, 0, -0.5*max_dims[4]);
+  translate((max_dims[0]+max_dims[1])/2+pers_rand[2]*(max_dims[1]-max_dims[0])-(max_dims[1]-max_dims[0])/2, (max_dims[2]+max_dims[3])/2+pers_rand[2]*(max_dims[3]-max_dims[2])-(max_dims[3]-max_dims[2])/2, -0.5*max_dims[4]);
   stroke(360-hue,80,70);
+  switch (shape_type) {
+    case 1: {
   sphereDetail(20);
   sphere(shape_size);
+    }
+    break;
+    case 2: {
+  sphereDetail(2);
+  sphere(shape_size);
+    }
+    break;
+    case 3: {
+      box(shape_size);
+    }
+    break;
+    case 4: {
+      tetrahedron(shape_size);
+    }
+    break;
+  }
   shape_size += shape_growing_speed*10;
   popMatrix();
 }
@@ -371,6 +410,17 @@ void noteOn(int channel, int pitch, int velocity) {
   a = random(PI);
   b = random(1);
   
+  //randomize some stuff
+  movement_type = int(1+random(2));
+  shape_type = int(1+random(4));
+  light_type = int(1+random(4));
+  
+  println("movement_type:"+movement_type);
+  println("shape_type:"+shape_type);
+  println("light_type:"+light_type);
+  
+  shape_size = 0;
+  
   int rgb[] = hsl_to_rgb(hue, sat, lig);
   
   //turn light on
@@ -400,19 +450,20 @@ void controllerChange(int channel, int number, int value) {
             movement_type = round(1+value_norm*(number_of_types-1));
             println("movement_type: "+movement_type);}
     break;
-    //point detail
-    case 3:{int number_of_details = 10;
-            point_detail = round(1+value_norm*(number_of_details-1));
-            println("point_detail: "+point_detail);}
+    //cut
+    case 3:{cut_x = cut_y = cut_z = value_norm;
+            println("cut: "+value_norm);}
     break;
     //shape type
-    case 4:{int number_of_shape = 1;
-            shape_type = round(1+value_norm*(number_of_shape-1));
-            println("shape_type: "+shape_type);}
+    case 4:{//int number_of_shape = 4;
+            //shape_type = round(1+value_norm*(number_of_shape-1));
+            angle_x = value_norm/127.0*3;
+            println("angle_x: "+angle_x);}
     break;
     //shape growing speed
-    case 5:{shape_growing_speed = value_norm;
-            println("shape_growing_speed: "+shape_growing_speed);}
+    case 5:{//shape_growing_speed = value_norm;
+            angle_y = value_norm/127.0*3;
+            println("angle_y: "+angle_y);}
     break;
     //shape points spreading in x dir
     case 6:{spread_points_x = value_norm;
@@ -489,3 +540,25 @@ PVector depthToWorld(int x, int y, int depthValue) {
   result.z = (float)(depth);
   return result;
 }
+
+void tetrahedron(float size){
+  beginShape(TRIANGLE_STRIP);
+  fill(255);
+  
+  //vertex(-size, -size, -size);   //1
+  //vertex( 0, 0, -size);          //2
+  //vertex(   0,    -size,  0);    //3
+  //vertex( -size,  0, 0);         //4
+  
+  //123412
+  
+  vertex(-size, -size, -size);   //1
+  vertex( 0, 0, -size);          //2
+  vertex(   0,    -size,  0);    //3
+  vertex( -size,  0, 0);         //4
+  vertex(-size, -size, -size);   //1
+  vertex( 0, 0, -size);          //2
+  
+  
+
+  endShape(CLOSE);}
